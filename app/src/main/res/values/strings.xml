@@ -5,4 +5,9 @@
     <string name="my_continue">Continue</string>
     <string name="my_dummy">welcome to distance tracker app . it needs permission to run the app. so please to be patient.. to do something.dummy</string>
     <string name="permission_title">permissionWarning</string>
+    <string name="tap_on_my_location_button">Tap on My Location Button.</string>
+    <string name="text_start">Start</string>
+    <string name="text_stop">Stop</string>
+    <string name="test_reset">Reset</string>
+    <string name="_3">3</string>
 </resources>
