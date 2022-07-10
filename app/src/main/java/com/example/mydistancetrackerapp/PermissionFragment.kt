@@ -5,8 +5,8 @@ import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.example.mydistancetrackerapp.Permissions.hasLocationPermission
-import com.example.mydistancetrackerapp.Permissions.requestLocationPermission
+import com.example.mydistancetrackerapp.util.Permissions.hasLocationPermission
+import com.example.mydistancetrackerapp.util.Permissions.requestLocationPermission
 import com.example.mydistancetrackerapp.databinding.FragmentPermissionBinding
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog

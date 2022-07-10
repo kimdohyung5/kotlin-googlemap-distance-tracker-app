@@ -1,9 +1,9 @@
-package com.example.mydistancetrackerapp
+package com.example.mydistancetrackerapp.util
 
 import android.Manifest
 import android.content.Context
 import androidx.fragment.app.Fragment
-import com.example.mydistancetrackerapp.Constants.PERMISSION_LOCATION_REQUEST_CODE
+import com.example.mydistancetrackerapp.util.Constants.PERMISSION_LOCATION_REQUEST_CODE
 import com.vmadalin.easypermissions.EasyPermissions
 
 
