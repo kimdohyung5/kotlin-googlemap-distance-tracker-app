@@ -3,6 +3,8 @@ package com.example.mydistancetrackerapp
 import android.view.View
 import android.widget.Button
 
+
+// kimdo logging
 object ExtensionFunctions {
     fun View.show() {
         this.visibility = View.VISIBLE
