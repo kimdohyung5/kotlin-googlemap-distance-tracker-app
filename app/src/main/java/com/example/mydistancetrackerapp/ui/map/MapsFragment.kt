@@ -1,26 +1,30 @@
-package com.example.mydistancetrackerapp
+package com.example.mydistancetrackerapp.ui.map
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import androidx.fragment.app.Fragment
 
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.mydistancetrackerapp.ExtensionFunctions.hide
-import com.example.mydistancetrackerapp.ExtensionFunctions.show
+import com.example.mydistancetrackerapp.util.ExtensionFunctions.disable
+import com.example.mydistancetrackerapp.util.ExtensionFunctions.hide
+import com.example.mydistancetrackerapp.util.ExtensionFunctions.show
+import com.example.mydistancetrackerapp.R
 import com.example.mydistancetrackerapp.databinding.FragmentMapsBinding
+import com.example.mydistancetrackerapp.service.TrackerService
+import com.example.mydistancetrackerapp.util.Constants.ACTION_SERVICE_START
 import com.example.mydistancetrackerapp.util.Permissions.hasBackgroundLocationPermission
 import com.example.mydistancetrackerapp.util.Permissions.requestBackgroundLocationPermission
 
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import kotlinx.coroutines.delay
@@ -78,10 +82,52 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
 
     private fun onStartButtonClicked() {
         if(hasBackgroundLocationPermission(requireContext())) {
-            Log.d(TAG, "onStartButtonClicked: already Enabled")
+            startCountDown()
+            binding.startButton.disable()
+            binding.startButton.hide()
+            binding.stopButton.show()
         } else {
             requestBackgroundLocationPermission(this)
         }
+    }
+
+    private fun startCountDown() {
+        binding.timerTextView.show()
+        binding.stopButton.disable()
+
+        var timer: CountDownTimer = object : CountDownTimer(4000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val currentSecond = millisUntilFinished / 1000
+                if( currentSecond.toString() == "0") {
+                    binding.timerTextView.text = "GO"
+                    binding.timerTextView.setTextColor(ContextCompat.getColor(requireContext(),
+                        R.color.black
+                    ))
+                } else {
+                    binding.timerTextView.text = currentSecond.toString()
+                    binding.timerTextView.setTextColor(ContextCompat.getColor(requireContext(),
+                        R.color.red
+                    ))
+                }
+            }
+
+            override fun onFinish() {
+                sendActionCommandToServcie(ACTION_SERVICE_START)
+                binding.timerTextView.hide()
+            }
+        }
+        timer.start()
+    }
+
+    private fun sendActionCommandToServcie(action:String) {
+        Intent(
+            requireContext(),
+            TrackerService::class.java
+        ).apply {
+            this.action = action
+            requireContext().startService( this )
+        }
+
     }
 
     override fun onMyLocationButtonClick(): Boolean {
@@ -120,8 +166,6 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
         _binding = null
 
     }
-
-    
 
     companion object {
         const val TAG = "MapsFragment"

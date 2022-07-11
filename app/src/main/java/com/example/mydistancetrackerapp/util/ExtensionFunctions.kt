@@ -1,4 +1,4 @@
-package com.example.mydistancetrackerapp
+package com.example.mydistancetrackerapp.util
 
 import android.view.View
 import android.widget.Button

@@ -1,10 +1,11 @@
-package com.example.mydistancetrackerapp
+package com.example.mydistancetrackerapp.ui.permission
 
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.example.mydistancetrackerapp.R
 import com.example.mydistancetrackerapp.util.Permissions.hasLocationPermission
 import com.example.mydistancetrackerapp.util.Permissions.requestLocationPermission
 import com.example.mydistancetrackerapp.databinding.FragmentPermissionBinding
@@ -27,7 +28,7 @@ class PermissionFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
         binding.continueButton.setOnClickListener {
             if(hasLocationPermission(requireContext())) {
-                findNavController().navigate( R.id.action_permissionFragment_to_mapsFragment)
+                findNavController().navigate(R.id.action_permissionFragment_to_mapsFragment)
             } else {
                 requestLocationPermission(this)
             }
@@ -66,7 +67,7 @@ class PermissionFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
     // 첫번째만 실행이 된다.
     override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
-        findNavController().navigate( R.id.action_permissionFragment_to_mapsFragment )
+        findNavController().navigate(R.id.action_permissionFragment_to_mapsFragment)
     }
 
 
