@@ -8,7 +8,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.mydistancetrackerapp.ui.MainActivity
 import com.example.mydistancetrackerapp.R
-import com.example.mydistancetrackerapp.util.Constants.ACTION_NAVIGATE_TO_MAPS_FRAGMENT
+//import com.example.mydistancetrackerapp.util.Constants.ACTION_NAVIGATE_TO_MAPS_FRAGMENT
 import com.example.mydistancetrackerapp.util.Constants.NOTIFICATION_CHANNEL_ID
 import com.example.mydistancetrackerapp.util.Constants.PENDING_INTENT_REQUEST_CODE
 import dagger.Module
