@@ -2,6 +2,7 @@ package com.example.mydistancetrackerapp.ui.map
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import androidx.fragment.app.Fragment
 
 import android.os.Bundle
@@ -18,13 +19,18 @@ import com.example.mydistancetrackerapp.util.ExtensionFunctions.show
 import com.example.mydistancetrackerapp.R
 import com.example.mydistancetrackerapp.databinding.FragmentMapsBinding
 import com.example.mydistancetrackerapp.service.TrackerService
+import com.example.mydistancetrackerapp.ui.map.MapUtil.setCameraPosition
 import com.example.mydistancetrackerapp.util.Constants.ACTION_SERVICE_START
+import com.example.mydistancetrackerapp.util.Constants.ACTION_SERVICE_STOP
+import com.example.mydistancetrackerapp.util.ExtensionFunctions.enable
 import com.example.mydistancetrackerapp.util.Permissions.hasBackgroundLocationPermission
 import com.example.mydistancetrackerapp.util.Permissions.requestBackgroundLocationPermission
+import com.google.android.gms.maps.CameraUpdateFactory
 
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.*
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import kotlinx.coroutines.delay
@@ -37,6 +43,11 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
     private val binding get() = _binding!!
     private lateinit  var map : GoogleMap
 
+    private var startTime = 0L
+    private var stopTime = 0L
+
+    private var locationList = mutableListOf<LatLng>()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -47,14 +58,19 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
         binding.startButton.setOnClickListener {  
             onStartButtonClicked()
         }
-        binding.stopButton.setOnClickListener {  }
+        binding.stopButton.setOnClickListener {
+            onStopButtonClicked()
+        }
         binding.resetButton.setOnClickListener {  }
 
         return binding.root
     }
 
-    
-
+    private fun onStopButtonClicked() {
+        stopForegroundService()
+        binding.stopButton.hide()
+        binding.startButton.show()
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
@@ -74,10 +90,52 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
             isTiltGesturesEnabled = false
             isCompassEnabled = false
             isScrollGesturesEnabled = false
-
         }
 
-        Log.d(TAG, "onMapReady: onMayReady")
+        observeTrackerService()
+    }
+
+    private fun observeTrackerService() {
+        TrackerService.locationList.observe(viewLifecycleOwner) {
+            if(it != null) {
+                locationList = it
+                if(locationList.size > 1) {
+                    binding.stopButton.enable()
+                }
+                drawPolyline()
+                followPolyline()
+            }
+        }
+        TrackerService.startTime.observe(viewLifecycleOwner) {
+            startTime = it
+        }
+        TrackerService.stopTime.observe(viewLifecycleOwner) {
+            stopTime = it
+            if(stopTime != 0L) {
+                showBiggerPicture()
+            }
+        }
+    }
+
+    private fun drawPolyline() {
+        val polyline = map.addPolyline(
+            PolylineOptions().apply {
+                width(10f)
+                color(Color.BLUE)
+                jointType(JointType.ROUND)
+                startCap(ButtCap())
+                endCap(ButtCap())
+                addAll(locationList)
+            }
+        )
+    }
+
+    private fun followPolyline() {
+        if(locationList.isNotEmpty()) {
+            map.animateCamera((CameraUpdateFactory.newCameraPosition(
+                setCameraPosition(locationList.last())
+            )), 1000, null )
+        }
     }
 
     private fun onStartButtonClicked() {
@@ -119,6 +177,11 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
         timer.start()
     }
 
+    private fun stopForegroundService() {
+        binding.startButton.disable()
+        sendActionCommandToServcie(ACTION_SERVICE_STOP)
+    }
+
     private fun sendActionCommandToServcie(action:String) {
         Intent(
             requireContext(),
@@ -128,6 +191,18 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
             requireContext().startService( this )
         }
 
+    }
+
+    private fun showBiggerPicture() {
+        val bounds = LatLngBounds.Builder()
+        for(location in locationList) {
+            bounds.include(location)
+        }
+        map.animateCamera(
+            CameraUpdateFactory.newLatLngBounds(
+                bounds.build(), 100
+            ), 2000, null
+        )
     }
 
     override fun onMyLocationButtonClick(): Boolean {
