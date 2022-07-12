@@ -13,6 +13,8 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
+import com.example.mydistancetrackerapp.ui.map.MapUtil
+import com.example.mydistancetrackerapp.ui.map.MapUtil.calculateTheDistance
 import com.example.mydistancetrackerapp.util.Constants.ACTION_SERVICE_START
 import com.example.mydistancetrackerapp.util.Constants.ACTION_SERVICE_STOP
 import com.example.mydistancetrackerapp.util.Constants.LOCATION_FASTEST_UPDATE_INTERVAL
@@ -65,12 +67,12 @@ class TrackerService: LifecycleService() {
             for (location in locationResult.locations) {
                 if (location != null) {
                     updateLocationList(location)
-//                    val newLatLng = LatLng(location.latitude, location.longitude)
-//                    Log.d("Test", "GPS Location changed, Latitude: ${newLatLng.toString()}")
+                    updateNotificationPeriodically()
                 }
             }
         }
     }
+
 
 
 
@@ -131,6 +133,14 @@ class TrackerService: LifecycleService() {
 
     private fun removeLocationUpdates() {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+    }
+
+    private fun updateNotificationPeriodically() {
+        notification.apply {
+            setContentTitle("Distance Travelled")
+            setContentText(locationList.value?.let {calculateTheDistance(locationList = it) } + "km")
+        }
+        notificationManager.notify(NOTIFICATION_ID, notification.build())
     }
 
     private fun createNotificationChannel() {

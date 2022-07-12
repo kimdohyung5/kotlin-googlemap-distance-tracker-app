@@ -12,13 +12,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.example.mydistancetrackerapp.util.ExtensionFunctions.disable
 import com.example.mydistancetrackerapp.util.ExtensionFunctions.hide
 import com.example.mydistancetrackerapp.util.ExtensionFunctions.show
 import com.example.mydistancetrackerapp.R
 import com.example.mydistancetrackerapp.databinding.FragmentMapsBinding
 import com.example.mydistancetrackerapp.service.TrackerService
+import com.example.mydistancetrackerapp.ui.map.MapUtil.calculateElapsedTime
+import com.example.mydistancetrackerapp.ui.map.MapUtil.calculateTheDistance
 import com.example.mydistancetrackerapp.ui.map.MapUtil.setCameraPosition
 import com.example.mydistancetrackerapp.util.Constants.ACTION_SERVICE_START
 import com.example.mydistancetrackerapp.util.Constants.ACTION_SERVICE_STOP
@@ -36,8 +40,12 @@ import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+import com.example.mydistancetrackerapp.model.Result
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+
 class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener
-, EasyPermissions.PermissionCallbacks{
+, EasyPermissions.PermissionCallbacks, GoogleMap.OnMarkerClickListener{
 
     private var _binding: FragmentMapsBinding? = null
     private val binding get() = _binding!!
@@ -46,7 +54,13 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
     private var startTime = 0L
     private var stopTime = 0L
 
+    val started = MutableLiveData(false)
+
     private var locationList = mutableListOf<LatLng>()
+    private var polylineList = mutableListOf<Polyline>()
+    private var markerList = mutableListOf<Marker>()
+
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,25 +69,39 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
     ): View {
         _binding = FragmentMapsBinding.inflate(inflater, container, false)
 
+        binding.lifecycleOwner = this
+        binding.tracking = this
+
         binding.startButton.setOnClickListener {  
             onStartButtonClicked()
         }
         binding.stopButton.setOnClickListener {
             onStopButtonClicked()
         }
-        binding.resetButton.setOnClickListener {  }
+        binding.resetButton.setOnClickListener {
+            onResetButtonClicked()
+        }
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
         return binding.root
     }
+
+
 
     private fun onStopButtonClicked() {
         stopForegroundService()
         binding.stopButton.hide()
         binding.startButton.show()
     }
+
+    private fun onResetButtonClicked() {
+        mapReset()
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
+
 
         mapFragment?.getMapAsync(this)
     }
@@ -83,6 +111,7 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
         map = googleMap
         map.isMyLocationEnabled = true
         map.setOnMyLocationButtonClickListener(this)
+        map.setOnMarkerClickListener (this)
         map.uiSettings.apply {
             isZoomControlsEnabled = false
             isZoomGesturesEnabled = false
@@ -113,7 +142,12 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
             stopTime = it
             if(stopTime != 0L) {
                 showBiggerPicture()
+                displayResults()
             }
+        }
+        TrackerService.started.observe(viewLifecycleOwner) {
+            started.value = it
+
         }
     }
 
@@ -128,6 +162,8 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
                 addAll(locationList)
             }
         )
+
+        polylineList.add(polyline)
     }
 
     private fun followPolyline() {
@@ -203,6 +239,57 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
                 bounds.build(), 100
             ), 2000, null
         )
+        addMarker(locationList.first() )
+        addMarker(locationList.last() )
+
+    }
+
+    private fun addMarker(position: LatLng) {
+        val marker = map.addMarker(MarkerOptions().position(position))
+        marker?.let { markerList.add(it) }
+    }
+
+    private fun displayResults() {
+        val result = Result(
+            calculateTheDistance(locationList),
+            calculateElapsedTime( startTime, stopTime )
+        )
+        lifecycleScope.launch {
+            delay(2500)
+            val directions = MapsFragmentDirections.actionMapsFragmentToResultFragment(result)
+            findNavController().navigate(directions)
+            binding.startButton.apply {
+                hide()
+                enable()
+            }
+            binding.stopButton.hide()
+            binding.resetButton.show()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun mapReset() {
+        fusedLocationProviderClient.lastLocation.addOnCompleteListener {
+            val lastKnownLocation = LatLng(
+                it.result.latitude,
+                it.result.longitude
+            )
+            map.animateCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    setCameraPosition(lastKnownLocation)
+                )
+            )
+            for(polyline in polylineList) {
+                polyline.remove()
+            }
+            for( marker in markerList) {
+                marker.remove()
+            }
+            locationList.clear()
+            markerList.clear()
+            binding.resetButton.hide()
+            binding.startButton.show()
+        }
     }
 
     override fun onMyLocationButtonClick(): Boolean {
@@ -244,5 +331,9 @@ class MapsFragment : Fragment() , OnMapReadyCallback, GoogleMap.OnMyLocationButt
 
     companion object {
         const val TAG = "MapsFragment"
+    }
+
+    override fun onMarkerClick(p0: Marker): Boolean {
+        return true
     }
 }

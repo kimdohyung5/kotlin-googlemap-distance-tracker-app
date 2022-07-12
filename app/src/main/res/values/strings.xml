@@ -10,4 +10,10 @@
     <string name="text_stop">Stop</string>
     <string name="test_reset">Reset</string>
     <string name="_3">3</string>
+    <string name="distance">Distance</string>
+    <string name="_0_0km">0.0km</string>
+    <string name="time">time</string>
+    <string name="_00_00_00">00:00:00</string>
+    <string name="button">Button</string>
+    <string name="result">%1$s km</string>
 </resources>

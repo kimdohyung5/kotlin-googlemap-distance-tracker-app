@@ -4,6 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
+        <variable
+            name="tracking"
+            type="com.example.mydistancetrackerapp.ui.map.MapsFragment" />
 
     </data>
 
@@ -25,12 +28,14 @@
 
         <TextView
             android:id="@+id/timer_textView"
+
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/_3"
             android:textSize="80sp"
             android:textStyle="bold"
             android:visibility="invisible"
+
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
@@ -39,6 +44,7 @@
 
         <TextView
             android:id="@+id/hint_textView"
+            observeTracking = "@{tracking.started}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/tap_on_my_location_button"
@@ -63,6 +69,7 @@
 
         <Button
             android:id="@+id/stop_button"
+            observeTracking = "@{tracking.started}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="@color/red"

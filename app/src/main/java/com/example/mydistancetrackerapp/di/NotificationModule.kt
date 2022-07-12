@@ -51,7 +51,4 @@ object NotificationModule {
         return context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
 
-
-
-
 }
